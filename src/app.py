@@ -27,13 +27,13 @@ def dbconn():
                                    database=app.config['DATABASE_NAME'])
 
 
-def __quantity(quantity_type, amount_int, amount_decimal):
+def __quantity(quantity_type, quantity_int, quantity_decimal):
     if quantity_type == 'none':
         return 0
     elif quantity_type == 'integer':
-        return amount_int
+        return quantity_int
     else:
-        return amount_decimal
+        return quantity_decimal
 
 
 @app.route('/api/v1.0.0/system_changes/<system_uid>/<key>', methods=['GET'])
@@ -41,12 +41,12 @@ def system_changes(system_uid, key):
     conn = dbconn()
     cursor = conn.cursor()
     try:
-        cursor.execute('select c.time, c.amount_int, c.amount_decimal, qt.name, u.name from system_changes c join change_types ct on c.change_type_id=ct.id join quantity_types qt on qt.id=ct.quantity_type_id join units u on u.id=ct.unit_id where system_uid=%s and ct.name=%s',
+        cursor.execute('select c.time, c.quantity_int, c.quantity_decimal, qt.name, u.name from system_changes c join change_types ct on c.change_type_id=ct.id join quantity_types qt on qt.id=ct.quantity_type_id join units u on u.id=ct.unit_id where system_uid=%s and ct.name=%s',
                        [system_uid, key])
         result = [{'time': time.strftime(API_TIME_FORMAT),
-                   'quantity': __quantity(quantity_type, amount_int, amount_decimal),
+                   'quantity': __quantity(quantity_type, quantity_int, quantity_decimal),
                    'unit': unit
-        } for time, amount_int, amount_decimal, quantity_type, unit in cursor.fetchall()]
+        } for time, quantity_int, quantity_decimal, quantity_type, unit in cursor.fetchall()]
         return jsonify(change_type=key, changes=result)
     finally:
         cursor.close()
@@ -99,10 +99,10 @@ def put_system_changes(system_uid, key):
             cursor.execute('insert into system_changes (system_uid,time,change_type_id) values (%s,%s,%s)',
                            [system_uid, record_time, change_type_id])
         elif quantity_type == 'integer':
-            cursor.execute('insert into system_changes (system_uid,time,change_type_id,amount_int) values (%s,%s,%s,%s)',
+            cursor.execute('insert into system_changes (system_uid,time,change_type_id,quantity_int) values (%s,%s,%s,%s)',
                            [system_uid, record_time, change_type_id, quantity])
         else:
-            cursor.execute('insert into system_changes (system_uid,time,change_type_id,amount_decimal) values (%s,%s,%s,%s)',
+            cursor.execute('insert into system_changes (system_uid,time,change_type_id,quantity_decimal) values (%s,%s,%s,%s)',
                            [system_uid, record_time, change_type_id, quantity])
         conn.commit()
     finally:

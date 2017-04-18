@@ -2,7 +2,7 @@
 create table if not exists quantity_types (id integer primary key not null auto_increment, name varchar (30));
 create table if not exists units (id integer primary key not null auto_increment, name varchar (30), full_name varchar(30));
 create table if not exists change_types (id integer primary key not null auto_increment, name varchar(30), description varchar(100), quantity_type_id integer not null references quantity_types, unit_id integer not null default 1 references units);
-create table if not exists system_changes (id integer primary key not null auto_increment, system_uid varchar(40) not null, time datetime not null, change_type_id integer not null references change_types, amount_int integer, amount_decimal decimal(13, 10));
+create table if not exists system_changes (id integer primary key not null auto_increment, system_uid varchar(40) not null, time datetime not null, change_type_id integer not null references change_types, quantity_int integer, quantity_decimal decimal(13, 10));
 
 insert into units (id, name) values (1, 'none');
 
