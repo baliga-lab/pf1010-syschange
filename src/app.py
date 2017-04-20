@@ -41,12 +41,13 @@ def system_changes(system_uid, key):
     conn = dbconn()
     cursor = conn.cursor()
     try:
-        cursor.execute('select c.time, c.quantity_int, c.quantity_decimal, qt.name, u.name from system_changes c join change_types ct on c.change_type_id=ct.id join quantity_types qt on qt.id=ct.quantity_type_id join units u on u.id=ct.unit_id where system_uid=%s and ct.name=%s',
+        cursor.execute('select c.time,c.quantity_int,c.quantity_decimal,qt.name,u.name,c.subtype from system_changes c join change_types ct on c.change_type_id=ct.id join quantity_types qt on qt.id=ct.quantity_type_id join units u on u.id=ct.unit_id where system_uid=%s and ct.name=%s',
                        [system_uid, key])
         result = [{'time': time.strftime(API_TIME_FORMAT),
                    'quantity': __quantity(quantity_type, quantity_int, quantity_decimal),
-                   'unit': unit
-        } for time, quantity_int, quantity_decimal, quantity_type, unit in cursor.fetchall()]
+                   'unit': unit,
+                   'subtype': subtype
+        } for time, quantity_int, quantity_decimal, quantity_type, unit, subtype in cursor.fetchall()]
         return jsonify(change_type=key, changes=result)
     finally:
         cursor.close()
@@ -64,15 +65,22 @@ def put_system_changes(system_uid, key):
     conn = dbconn()
     cursor = conn.cursor()
     try:
-        cursor.execute('select ct.id, ct.name, qt.name from change_types ct join quantity_types qt on ct.quantity_type_id=qt.id where ct.name=%s',
+        cursor.execute('select ct.id,ct.name,qt.name,ct.has_subtype from change_types ct join quantity_types qt on ct.quantity_type_id=qt.id where ct.name=%s',
                        [key])
         row = cursor.fetchone()
         if row is None:
             return jsonify(status='error', info='change type does not exist')
-        change_type_id, _, quantity_type = row
+        change_type_id, _, quantity_type, has_subtype = row
     finally:
         cursor.close()
         conn.close()
+
+    # subtype check
+    if has_subtype == 1:
+        try:
+            subtype = int(req_data['subtype'])
+        except:
+            return jsonify(status='error', info='missing subtype')
 
     # quantity check
     if quantity_type != 'none':
@@ -99,8 +107,12 @@ def put_system_changes(system_uid, key):
             cursor.execute('insert into system_changes (system_uid,time,change_type_id) values (%s,%s,%s)',
                            [system_uid, record_time, change_type_id])
         elif quantity_type == 'integer':
-            cursor.execute('insert into system_changes (system_uid,time,change_type_id,quantity_int) values (%s,%s,%s,%s)',
-                           [system_uid, record_time, change_type_id, quantity])
+            if has_subtype:
+                cursor.execute('insert into system_changes (system_uid,time,change_type_id,quantity_int,subtype) values (%s,%s,%s,%s,%s)',
+                               [system_uid, record_time, change_type_id, quantity, subtype])
+            else:
+                cursor.execute('insert into system_changes (system_uid,time,change_type_id,quantity_int) values (%s,%s,%s,%s)',
+                               [system_uid, record_time, change_type_id, quantity])
         else:
             cursor.execute('insert into system_changes (system_uid,time,change_type_id,quantity_decimal) values (%s,%s,%s,%s)',
                            [system_uid, record_time, change_type_id, quantity])

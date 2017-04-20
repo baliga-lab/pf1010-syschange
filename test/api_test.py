@@ -80,7 +80,8 @@ class APITest(unittest.TestCase):  # pylint: disable-msg=R0904
         result = json.loads(self.app.put('/api/v1.0.0/system_change/1/harvest_fish',
                                          data=json.dumps({
                                              'time': '2017-04-17T13:24:00Z',
-                                             'quantity': 12.3
+                                             'quantity': 12.3,
+                                             'subtype': 1
                                          }),
                                          headers={'Content-Type': 'application/json'}).data.decode('utf-8'))
         self.assertEquals(result['status'], "error")
@@ -125,13 +126,24 @@ class APITest(unittest.TestCase):  # pylint: disable-msg=R0904
         self.assertEquals(change['quantity'], 12.3)
         self.assertEquals(change['time'], '2017-04-17T13:24:00Z')
 
-
-    def test_put_syschange_integer(self):
+    def test_put_syschange_with_subtype_no_subtype(self):
         """test the put sys change API function for integer types"""
         result = json.loads(self.app.put('/api/v1.0.0/system_change/1/add_fish',
                                          data=json.dumps({
                                              'time': '2017-04-17T13:24:00Z',
                                              'quantity': 3
+                                         }),
+                                         headers={'Content-Type': 'application/json'}).data.decode('utf-8'))
+        self.assertEquals(result['status'], "error")
+        self.assertEquals(result['info'], "missing subtype")
+
+    def test_put_syschange_integer_and_subtype(self):
+        """test the put sys change API function for integer types"""
+        result = json.loads(self.app.put('/api/v1.0.0/system_change/1/add_fish',
+                                         data=json.dumps({
+                                             'time': '2017-04-17T13:24:00Z',
+                                             'quantity': 3,
+                                             'subtype': 1
                                          }),
                                          headers={'Content-Type': 'application/json'}).data.decode('utf-8'))
         self.assertEquals(result['status'], "ok")
@@ -143,6 +155,7 @@ class APITest(unittest.TestCase):  # pylint: disable-msg=R0904
         change = result['changes'][0]
         self.assertEquals(change['quantity'], 3)
         self.assertEquals(change['time'], '2017-04-17T13:24:00Z')
+        self.assertEquals(change['subtype'], 1)
 
     def test_put_syschange_none_type(self):
         """test the put sys change API function for the none type"""
