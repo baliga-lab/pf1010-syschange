@@ -31,9 +31,9 @@ def __quantity(quantity_type, quantity_int, quantity_decimal):
     if quantity_type == 'none':
         return 0
     elif quantity_type == 'integer':
-        return quantity_int
+        return int(quantity_int)
     else:
-        return quantity_decimal
+        return float(quantity_decimal)
 
 
 @app.route('/api/v1.0.0/system_changes/<system_uid>/<key>', methods=['GET'])
@@ -122,4 +122,4 @@ if __name__ == '__main__':
     app.debug = True
     app.secret_key = 'trtenradhipgrpdnstdntsodetsnrdeoistd'
     app.logger.addHandler(handler)
-    app.run(host='0.0.0.0', debug=True)
+    app.run(host='0.0.0.0', port=8081, debug=True)
